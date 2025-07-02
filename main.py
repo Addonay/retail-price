@@ -14,7 +14,12 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
 )
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import (
+    GridSearchCV,
+    train_test_split,
+)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 warnings.filterwarnings("ignore")
@@ -77,7 +82,9 @@ plt.hist(price_data, bins=50, alpha=0.7, edgecolor="black")
 plt.title("Unit Price Distribution")
 plt.xlabel("Unit Price")
 plt.ylabel("Frequency")
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% VISUALIZE QUANTITY DISTRIBUTION
 plt.figure(figsize=(10, 6))
@@ -86,7 +93,9 @@ plt.hist(qty_data, bins=30, alpha=0.7, edgecolor="black")
 plt.title("Quantity Distribution")
 plt.xlabel("Quantity")
 plt.ylabel("Frequency")
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% PRICE BY CATEGORY BOXPLOT
 # Convert to format seaborn can use
@@ -96,7 +105,9 @@ sns.boxplot(x="product_category_name", y="unit_price", data=plot_data)
 plt.title("Product Category vs. Unit Price")
 plt.xticks(rotation=45)
 plt.tight_layout()
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% TOTAL PRICE BY CATEGORY
 plot_data2 = df.select(["product_category_name", "total_price"]).to_pandas()
@@ -105,7 +116,9 @@ sns.boxplot(x="product_category_name", y="total_price", data=plot_data2)
 plt.title("Product Category vs. Total Price")
 plt.xticks(rotation=45)
 plt.tight_layout()
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% COMPETITOR PRICE COMPARISON
 comp_data = df.select(["unit_price", "comp_1", "comp_2", "comp_3"]).to_pandas()
@@ -120,7 +133,9 @@ plt.xlabel("Competitor Price")
 plt.ylabel("Our Price")
 plt.title("Our Price vs Competitors")
 plt.legend()
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% SEASONAL ANALYSIS
 seasonal_qty = df.group_by("month").agg(pl.col("qty").mean().alias("avg_qty"))
@@ -130,7 +145,9 @@ plt.bar(seasonal_data["month"], seasonal_data["avg_qty"])
 plt.title("Average Quantity by Month")
 plt.xlabel("Month")
 plt.ylabel("Average Quantity")
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% CREATE TARGET VARIABLE - DEMAND CATEGORIES
 # Create demand categories based on quantity quartiles
@@ -272,7 +289,9 @@ sns.heatmap(
 plt.title("Confusion Matrix")
 plt.ylabel("Actual")
 plt.xlabel("Predicted")
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% FEATURE IMPORTANCE ANALYSIS
 feature_importance = best_dt.feature_importances_
@@ -295,7 +314,9 @@ plot_tree(
     max_depth=3,
 )
 plt.title("Decision Tree Visualization (First 3 Levels)")
-plt.show()
+plt.savefig(
+    f"../retails-f/assets/{plt.gca().get_title()}.png", bbox_inches="tight"
+)
 
 # %% SAVE MODEL
 joblib.dump(best_dt, "data/model.pkl")
@@ -330,3 +351,87 @@ category, probs = predict_demand_category(best_dt, sample_features)
 print(f"Sample prediction: {category}")
 print(f"Probabilities: {probs}")
 print(f"Actual: {['Low Demand', 'Medium Demand', 'High Demand'][y_test[0]]}")
+
+# %% ANN MODEL
+
+# Define the parameter grid for MLPClassifier
+mlp_params = {
+    "hidden_layer_sizes": [(50,), (100,), (50, 50), (100, 50)],
+    "activation": ["tanh", "relu"],
+    "solver": ["adam", "sgd"],
+    "alpha": [0.0001, 0.001, 0.01],
+    "learning_rate": ["constant", "adaptive"],
+}
+
+mlp = MLPClassifier(max_iter=1000, random_state=42)
+
+# Use GridSearchCV to find the best parameters for MLPClassifier
+mlp_grid = GridSearchCV(mlp, mlp_params, cv=5, scoring="accuracy", n_jobs=-1)
+
+# Fit the model
+mlp_grid.fit(X_train, y_train)
+
+# Get the best estimator
+best_mlp = mlp_grid.best_estimator_
+
+print(f"Best MLPClassifier parameters: {mlp_grid.best_params_}")
+print(f"Best cross-validation score: {mlp_grid.best_score_:.3f}")
+
+# %% CHECK MLP MODEL PERFORMANCE
+y_pred_mlp = best_mlp.predict(X_test)
+accuracy_mlp = accuracy_score(y_test, y_pred_mlp)
+print(f"Test accuracy (MLPClassifier): {accuracy_mlp:.3f}")
+
+print("\nClassification Report (MLPClassifier):")
+print(
+    classification_report(
+        y_test,
+        y_pred_mlp,
+        target_names=["Low Demand", "Medium Demand", "High Demand"],
+    )
+)
+
+
+# %% K-NEAREST NEIGHBORS MODEL
+# Define the parameter grid for KNN
+knn_params = {
+    "n_neighbors": [3, 5, 7, 9, 11],
+    "weights": ["uniform", "distance"],
+    "metric": ["euclidean", "minkowski"],
+}
+
+knn = KNeighborsClassifier()
+
+# Use GridSearchCV to find the best parameters for KNN
+knn_grid = GridSearchCV(knn, knn_params, cv=5, scoring="accuracy", n_jobs=-1)
+
+# Fit the model
+knn_grid.fit(X_train, y_train)
+
+# Get the best estimator
+best_knn = knn_grid.best_estimator_
+
+print(f"Best KNN parameters: {knn_grid.best_params_}")
+print(f"Best cross-validation score: {knn_grid.best_score_:.3f}")
+
+# %% K-NN MODEL EVALUATION
+y_pred_knn = best_knn.predict(X_test)  # Use 'knn' instead of 'best_knn'
+accuracy_knn = accuracy_score(y_test, y_pred_knn)
+print(f"Test accuracy (KNN): {accuracy_knn:.3f}")
+
+print("\nClassification Report (KNN):")
+print(
+    classification_report(
+        y_test,
+        y_pred_knn,
+        target_names=["Low Demand", "Medium Demand", "High Demand"],
+    )
+)
+# %% COMPARE MODELS
+model_comparison = pl.DataFrame({
+    "Model": ["Decision Tree", "KNN", "MLPClassifier (ANN)"],
+    "Test Accuracy": [accuracy, accuracy_knn, accuracy_mlp],
+})
+
+print("Model Comparison Table:")
+model_comparison.sort("Test Accuracy", descending=True)
