@@ -6,12 +6,14 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "eli5>=0.16.0",
+    "ipykernel>=6.29.5",
     "jupytext>=1.17.2",
     "matplotlib>=3.10.3",
     "numpy>=2.3.0",
     "pandas>=2.3.0",
     "plotly>=6.1.2",
     "polars>=1.31.0",
+    "pyarrow>=20.0.0",
     "scikit-learn>=1.7.0",
     "seaborn>=0.13.2",
 ]
