@@ -216,16 +216,13 @@ print(f"Target vector shape: {y.shape}")
 
 # %% TRAIN TEST SPLIT (50-50)
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+    X, y, test_size=0.5, random_state=42, stratify=y
 )
 
 print(f"Training set size: {X_train.shape[0]}")
 print(f"Test set size: {X_test.shape[0]}")
 
 # %% DECISION TREE HYPERPARAMETER TUNING
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import GridSearchCV # Import GridSearchCV
-
 dt_params = {
     "max_depth": [5, 10, 15, 20, None],
     "min_samples_split": [2, 10, 20],
@@ -301,7 +298,7 @@ plt.title("Decision Tree Visualization (First 3 Levels)")
 plt.show()
 
 # %% SAVE MODEL
-joblib.dump(best_dt, "model.pkl")
+joblib.dump(best_dt, "data/model.pkl")
 
 model_metadata = {
     "model_type": "DecisionTreeClassifier",
@@ -311,7 +308,7 @@ model_metadata = {
     "demand_thresholds": {"low": low_thresh, "high": high_thresh},
 }
 
-joblib.dump(model_metadata, "dt_metadata.pkl")
+joblib.dump(model_metadata, "data/dt_metadata.pkl")
 print("Decision tree model and metadata saved successfully!")
 
 
